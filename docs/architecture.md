@@ -61,8 +61,10 @@ leaves the source dirty and eligible for VS Code backup. Binary saves validate a
 snapshot; asynchronous results are applied only if the binary and source revisions still
 match. Each backend transaction has a private temporary directory. Custom-editor backups
 are loaded through the backup URI when VS Code restores an unsaved document.
-Binary saves recheck the disk baseline after validation. Save As captures the
-destination before validation and checks it again before writing. Missing-original
+Binary saves recheck the disk baseline after validation and after staging the temporary
+file, before replacing the destination; cancellation and editor revisions are also
+checked at that point. Save As captures the destination before validation and uses
+the same checks. Missing-original
 backup recovery keeps a distinct missing-disk state, validates all executable
 instructions on save, and refuses to replace an externally recreated file.
 
@@ -82,6 +84,10 @@ and section. This keeps source documents distinct even when images have identica
 kernel names or payload hashes. Rehydration, source-only saves and live-buffer assembly
 all use that binding. Undo restores only the bound image payload inside the current host
 snapshot, preserving edits to other images and the preview's current image selection.
+
+Closing a virtual source releases its cached content and invalidates pending recovery.
+Reopening exports from the current base. Concurrent reads share a recovery job; a late
+result cannot overwrite a newer export or saved source, or repopulate a closed entry.
 
 CLI source saves with `--stdin` use the supplied bytes as the base even when `--out` is
 given. They retain full save verification and atomic output replacement; the positional

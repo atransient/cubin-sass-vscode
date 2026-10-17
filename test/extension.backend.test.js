@@ -91,7 +91,8 @@ test('editing or closing a source cancels assembly without committing its result
     assert.equal(source.isDirty, true);
     assert.equal(h.doc.data.toString(), 'original');
     assert.equal(fs.readFileSync(h.uri.fsPath, 'utf8'), 'original');
-    assert.equal((await h.nvsassFS.readFile(uri)).toString(), 'previous source');
+    if (action === 'close') assert.equal(h.nvsassFS.entries.has(uri.toString()), false);
+    else assert.equal((await h.nvsassFS.readFile(uri)).toString(), 'previous source');
     assert.equal(h.backend.tasks.size, 0);
   }
 });

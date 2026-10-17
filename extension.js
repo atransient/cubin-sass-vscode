@@ -185,8 +185,11 @@ function permissionDenied(e) {
  * a running executable intact (an in-place write fails with ETXTBSY) and
  * preserves the original mode. Hard links to the old file are not updated.
  */
-async function writeBinaryAtomic(target, data) {
-  if (target.scheme !== 'file') return vscode.workspace.fs.writeFile(target, data);
+async function writeBinaryAtomic(target, data, beforeCommit = async () => {}) {
+  if (target.scheme !== 'file') {
+    await beforeCommit();
+    return vscode.workspace.fs.writeFile(target, data);
+  }
   let real = target.fsPath;
   let mode = null;
   try {
@@ -198,18 +201,21 @@ async function writeBinaryAtomic(target, data) {
   const tmp = vscode.Uri.file(path.join(path.dirname(real),
     `.${path.basename(real)}.cubin-sass-${crypto.randomBytes(6).toString('hex')}`));
   try {
-    await vscode.workspace.fs.writeFile(tmp, data);
-  } catch (e) {
-    // A writable file in a read-only directory cannot be replaced by rename.
-    if (!permissionDenied(e)) throw e;
-    return vscode.workspace.fs.writeFile(vscode.Uri.file(real), data);
-  }
-  try {
+    try {
+      await vscode.workspace.fs.writeFile(tmp, data);
+    } catch (e) {
+      // A writable file in a read-only directory cannot be replaced by rename.
+      if (!permissionDenied(e)) throw e;
+      await beforeCommit();
+      return await vscode.workspace.fs.writeFile(vscode.Uri.file(real), data);
+    }
     if (mode !== null) fs.chmodSync(tmp.fsPath, mode);
+    // Staging can take long enough for the destination or editor to change.
+    // Check again after staging, just before replacing the destination.
+    await beforeCommit();
     await vscode.workspace.fs.rename(tmp, vscode.Uri.file(real), { overwrite: true });
-  } catch (e) {
+  } finally {
     try { await vscode.workspace.fs.delete(tmp); } catch (_) { /* already gone */ }
-    throw e;
   }
 }
 
@@ -330,7 +336,11 @@ class CubinDocument {
     await assertDiskBaseline(target, expectedTarget);
     if (cancel && cancel.isCancellationRequested) throw new Error('保存已取消。');
     assertCurrent(this, snapshot);
-    await writeBinaryAtomic(target, snapshot.data);
+    await writeBinaryAtomic(target, snapshot.data, async () => {
+      await assertDiskBaseline(target, expectedTarget);
+      if (cancel && cancel.isCancellationRequested) throw new Error('保存已取消。');
+      assertCurrent(this, snapshot);
+    });
     if (sameTarget) {
       this.savedData = Buffer.from(snapshot.data);
       this.diskMissing = false;
@@ -1111,6 +1121,7 @@ function activate(context) {
     vscode.workspace.onDidCloseTextDocument((doc) => {
       backend.cancelKey(`source:${doc.uri.toString()}`);
       backend.cancelKey(`rebase:${doc.uri.toString()}`);
+      if (doc.uri.scheme === NVSASS_SCHEME) nvsassFS.forget(doc.uri);
     }),
     vscode.workspace.onDidChangeTextDocument((event) => {
       if (event.contentChanges.length) {

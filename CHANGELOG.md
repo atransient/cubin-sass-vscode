@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Recheck disk contents, cancellation and editor revisions after staging binary saves, before replacing the destination.
+- Release closed virtual source caches so reopening exports the current cubin contents.
+- Share concurrent source recovery jobs and discard stale recovery results after newer exports, saves or closure.
 - The save gate reports a missing or pre-sm_90 `nvdisasm` as a tool problem instead of illegal encodings.
 - Quote file names in the copied `xxd` command.
 - Accept `URZ` and named uniform registers/predicates in operand cells; label them by name.

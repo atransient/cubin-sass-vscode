@@ -109,7 +109,7 @@ test('save rejects edits made while validation is running, for save and save as'
   }
 });
 
-test('edits during file IO remain dirty and do not change the saved baseline', async (t) => {
+test('edits during staging abort the save and preserve the disk baseline', async (t) => {
   const h = fixture(t);
   const write = deferred();
   const writing = deferred();
@@ -126,9 +126,103 @@ test('edits during file IO remain dirty and do not change the saved baseline', a
   h.doc.applyWhole(Buffer.from('version B'), 'B');
   write.resolve();
   await rejected;
-  assert.equal(fs.readFileSync(h.uri.fsPath, 'utf8'), 'version A');
-  assert.equal(h.doc.savedData.toString(), 'version A');
+  assert.equal(fs.readFileSync(h.uri.fsPath, 'utf8'), 'original');
+  assert.equal(h.doc.savedData.toString(), 'original');
   assert.equal(h.doc.data.toString(), 'version B');
+  assert.deepEqual(fs.readdirSync(h.dir), ['base.cubin']);
+});
+
+test('saves preserve destination changes made while staging the temporary file', async (t) => {
+  for (const destination of ['original', 'existing', 'missing']) {
+    for (const change of ['replace', 'delete']) {
+      if (destination === 'missing' && change === 'delete') continue;
+      const h = fixture(t);
+      const target = destination === 'original' ? h.uri
+        : h.vscode.Uri.file(path.join(h.dir, 'other.cubin'));
+      if (destination === 'existing') fs.writeFileSync(target.fsPath, 'previous destination');
+      h.doc.applyWhole(Buffer.from('editor edit'), 'edit');
+      h.setRunner(async () => ({ ok: true }));
+      const writeFile = h.vscode.workspace.fs.writeFile;
+      h.vscode.workspace.fs.writeFile = async (uri, bytes) => {
+        await writeFile(uri, bytes);
+        if (change === 'delete') fs.unlinkSync(target.fsPath);
+        else fs.writeFileSync(target.fsPath, 'external edit');
+      };
+      await assert.rejects(h.provider.saveCustomDocumentAs(h.doc, target), /磁盘文件.*外部/);
+      assert.equal(fs.existsSync(target.fsPath), change !== 'delete');
+      if (change !== 'delete') assert.equal(fs.readFileSync(target.fsPath, 'utf8'), 'external edit');
+      assert.equal(h.doc.data.toString(), 'editor edit');
+      assert.equal(h.doc.savedData.toString(), 'original');
+      assert.equal(fs.readdirSync(h.dir).some((name) => name.includes('.cubin-sass-')), false);
+    }
+  }
+});
+
+test('cancellation during staging leaves the original and save-as destination untouched', async (t) => {
+  for (const saveAs of [false, true]) {
+    const h = fixture(t);
+    const target = saveAs ? h.vscode.Uri.file(path.join(h.dir, 'other.cubin')) : h.uri;
+    const cancel = { isCancellationRequested: false };
+    h.doc.applyWhole(Buffer.from('editor edit'), 'edit');
+    h.setRunner(async () => ({ ok: true }));
+    const writeFile = h.vscode.workspace.fs.writeFile;
+    h.vscode.workspace.fs.writeFile = async (uri, bytes) => {
+      await writeFile(uri, bytes);
+      cancel.isCancellationRequested = true;
+    };
+    await assert.rejects(h.provider.saveCustomDocumentAs(h.doc, target, cancel), /取消/);
+    assert.equal(fs.readFileSync(h.uri.fsPath, 'utf8'), 'original');
+    if (saveAs) assert.equal(fs.existsSync(target.fsPath), false);
+    assert.equal(h.doc.savedData.toString(), 'original');
+    assert.equal(h.doc.data.toString(), 'editor edit');
+    assert.deepEqual(fs.readdirSync(h.dir), ['base.cubin']);
+  }
+});
+
+test('closing a virtual source evicts its cache and reopening exports the current base', async (t) => {
+  const h = fixture(t);
+  h.extension.activate(h.context);
+  const uri = h.nvsassFS.set(h.uri, '.text.f', 'old source', 1);
+  const other = h.nvsassFS.set(h.uri, '.text.f', 'other image source', 0);
+  const source = h.sourceDoc(uri, 'old source');
+  source.close();
+  assert.equal(h.nvsassFS.entries.has(uri.toString()), false);
+  assert.equal(h.nvsassFS.entries.has(other.toString()), true);
+  fs.writeFileSync(h.uri.fsPath, 'new base');
+  h.setRunner(async (_uri, args, data) => {
+    assert.equal(args[args.indexOf('--image') + 1], '1');
+    assert.equal(data.toString(), 'new base');
+    return { ok: true, source: 'new source' };
+  });
+  const reopened = await h.vscode.workspace.openTextDocument(uri);
+  assert.notEqual(reopened, source);
+  assert.equal(reopened.getText(), 'new source');
+});
+
+test('permission fallback checks conflicts and cancellation before writing the original', async (t) => {
+  for (const change of ['external', 'cancel', 'none']) {
+    const h = fixture(t);
+    const cancel = { isCancellationRequested: false };
+    h.doc.applyWhole(Buffer.from('editor edit'), 'edit');
+    h.setRunner(async () => ({ ok: true }));
+    const writeFile = h.vscode.workspace.fs.writeFile;
+    h.vscode.workspace.fs.writeFile = async (uri, bytes) => {
+      if (uri.fsPath === h.uri.fsPath) return writeFile(uri, bytes);
+      if (change === 'external') fs.writeFileSync(h.uri.fsPath, 'external edit');
+      if (change === 'cancel') cancel.isCancellationRequested = true;
+      const error = new Error('read-only directory');
+      error.code = 'EACCES';
+      throw error;
+    };
+    const saving = h.provider.saveCustomDocument(h.doc, cancel);
+    if (change === 'none') await saving;
+    else await assert.rejects(saving, change === 'external' ? /磁盘文件.*外部/ : /取消/);
+    const expected = change === 'external' ? 'external edit'
+      : change === 'cancel' ? 'original' : 'editor edit';
+    assert.equal(fs.readFileSync(h.uri.fsPath, 'utf8'), expected);
+    assert.equal(h.doc.savedData.toString(), change === 'none' ? 'editor edit' : 'original');
+    assert.deepEqual(fs.readdirSync(h.dir), ['base.cubin']);
+  }
 });
 
 test('binary saves preserve external changes or deletion during validation', async (t) => {

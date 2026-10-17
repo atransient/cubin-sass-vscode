@@ -159,7 +159,13 @@ module.exports.testing = { CubinDocument, Provider, assembleIntoBuffer,
         text = value; this.version++; this.isDirty = isDirty;
         changed.fire({ document: this, contentChanges: [{ text: value }] });
       },
-      close() { this.isClosed = true; closed.fire(this); },
+      close() {
+        this.isClosed = true;
+        const documents = stub.workspace.textDocuments;
+        const index = documents.indexOf(this);
+        if (index >= 0) documents.splice(index, 1);
+        closed.fire(this);
+      },
       async save() {
         try {
           if (u.scheme === 'nvsass') await api.nvsassFS.writeFile(u, Buffer.from(text));

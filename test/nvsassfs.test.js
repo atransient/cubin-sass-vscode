@@ -48,7 +48,7 @@ Module._load = function (request, ...rest) {
   if (request === 'vscode') return stub;
   return load.call(this, request, ...rest);
 };
-const { ALL_TEXT_SECTIONS, NvsassFS, bindingOf } = require('../nvsassfs.js');
+const { ALL_TEXT_SECTIONS, NvsassFS, bindingOf, uriFor } = require('../nvsassfs.js');
 Module._load = load;
 const { baseHash, declaredBase } = require('../basehash.js');
 
@@ -166,6 +166,69 @@ test('导不出来（cubin 没了）就是文件不存在，不是空文档', as
   const uri = fs.set(BASE, SEC, 'x\n');
   fs.entries.clear();
   await assert.rejects(() => fs.readFile(uri), /FileNotFound/);
+});
+
+test('并发 stat 与 readFile 共用一次源码恢复', async () => {
+  let finish;
+  let calls = 0;
+  const fs = new NvsassFS(() => {
+    calls++;
+    return new Promise((resolve) => { finish = resolve; });
+  });
+  const uri = uriFor(BASE.fsPath, SEC);
+  const reading = fs.readFile(uri);
+  const stat = fs.stat(uri);
+  await Promise.resolve();
+  assert.equal(calls, 1);
+  finish('recovered');
+  assert.equal(String(await reading), 'recovered');
+  assert.equal((await stat).size, 9);
+});
+
+test('较早的恢复结果不会覆盖后来导出或保存的源码', async () => {
+  for (const update of ['export', 'save']) {
+    let finish;
+    const fs = new NvsassFS(() => new Promise((resolve) => { finish = resolve; }));
+    const uri = uriFor(BASE.fsPath, SEC);
+    const reading = fs.readFile(uri);
+    await Promise.resolve();
+    if (update === 'export') fs.set(BASE, SEC, 'new source');
+    else await fs.writeFile(uri, Buffer.from('new source'));
+    finish('old recovery');
+    assert.equal(String(await reading), 'new source');
+    assert.equal(String(await fs.readFile(uri)), 'new source');
+  }
+});
+
+test('关闭后未完成的恢复不能重新填充缓存或干扰重新打开', async () => {
+  const requests = [];
+  const fs = new NvsassFS(() => new Promise((resolve) => { requests.push(resolve); }));
+  const uri = uriFor(BASE.fsPath, SEC);
+  const oldRead = fs.readFile(uri);
+  const rejected = assert.rejects(oldRead, /FileNotFound/);
+  await Promise.resolve();
+  fs.forget(uri);
+  const newRead = fs.readFile(uri);
+  await Promise.resolve();
+  assert.equal(requests.length, 2);
+  requests[0]('stale recovery');
+  await rejected;
+  assert.equal(fs.entries.has(uri.toString()), false);
+  requests[1]('current recovery');
+  assert.equal(String(await newRead), 'current recovery');
+  assert.equal(String(await fs.readFile(uri)), 'current recovery');
+});
+
+test('恢复失败后能再次尝试', async () => {
+  let calls = 0;
+  const fs = new NvsassFS(async () => {
+    if (++calls === 1) throw new Error('temporary failure');
+    return 'recovered';
+  });
+  const uri = uriFor(BASE.fsPath, SEC);
+  await assert.rejects(fs.readFile(uri), /temporary failure/);
+  assert.equal(String(await fs.readFile(uri)), 'recovered');
+  assert.equal(calls, 2);
 });
 
 // --- `.base` 一致性：源码头里的 hash 必须等于磁盘上基底的 hash ---------------

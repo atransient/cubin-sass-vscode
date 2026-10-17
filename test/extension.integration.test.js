@@ -104,6 +104,31 @@ test('source-only saves stage full backend validation before committing to disk'
   assert.deepEqual(fs.readdirSync(dir), ['base.cubin']);
 });
 
+test('reopening a closed source uses externally updated cubin bytes and can save again', { skip: !haveTools }, async (t) => {
+  const h = loadExtension();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubin-sass-reopen-'));
+  t.after(async () => { await h.backend.dispose(); fs.rmSync(dir, { recursive: true, force: true }); });
+  const base = h.vscode.Uri.file(path.join(dir, 'base.cubin'));
+  const original = fs.readFileSync(fixture);
+  fs.writeFileSync(base.fsPath, original);
+  h.extension.activate(h.context);
+  const exported = JSON.parse(cp.execFileSync('python3', [backend, fixture, '--emit-source', '--all-sections']));
+  const uri = h.nvsassFS.set(base, exported.section, exported.source);
+  const source = h.sourceDoc(uri, exported.source.replace(/\.regcount \d+/, '.regcount 32'), true);
+  assert.equal(await source.save(), true, h.errors.join('\n'));
+  assert.equal(fs.readFileSync(base.fsPath).equals(original), false);
+  source.close();
+  assert.equal(h.nvsassFS.entries.has(uri.toString()), false);
+  fs.writeFileSync(base.fsPath, original);
+  const reopened = await h.vscode.workspace.openTextDocument(uri);
+  assert.equal(reopened.getText(), exported.source);
+  assert.equal(declaredBase(reopened.getText()), baseHash(original));
+  reopened.setText(reopened.getText().replace(/\.regcount \d+/, '.regcount 40'));
+  assert.equal(await reopened.save(), true, h.errors.join('\n'));
+  assert.equal(declaredBase(reopened.getText()), baseHash(fs.readFileSync(base.fsPath)));
+  assert.deepEqual(fs.readdirSync(dir), ['base.cubin']);
+});
+
 test('multi-image sources retain identity across edits, undo, preview closure and reload', { skip: !haveTools }, async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubin-sass-images-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));

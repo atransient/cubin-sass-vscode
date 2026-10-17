@@ -1,7 +1,14 @@
-# cubin SASS preview
+# Cubin SASS Preview 使用手册
 
-在 VS Code 里打开 `.cubin` 直接看 SASS，像 markdown preview 那样 —— 不用再
-`nvdisasm -c xxx.cubin | less`。
+安装与快速开始见[中文首页](../README.zh-CN.md)。本手册介绍具体操作、编辑限制和配置。
+
+- [支持的文件与编辑模式](#支持的文件与编辑模式)
+- [宿主可执行文件中的 cubin](#宿主可执行文件中的-cubin)
+- [预览与源码功能](#预览与源码功能)
+- [编辑与保存](#编辑)
+- [配置与后台任务](#配置)
+- [故障排查](#故障排查)
+- [命令行](#命令行)
 
 > 当前编辑与“以 SASS 源码打开/汇编回写”只支持 **sm_90**。非 sm_90 的指令宽度、
 > 控制束和字段布局不同；后端会明确报告实际架构，不会套用 sm_90 规则冒险写坏文件。
@@ -137,6 +144,16 @@ python3 scripts/cubin_sass.py ./app --image 1 \
   有未保存改动则弹窗问，不会默默覆盖你正在改的东西
 
 ### 保存安全闸
+
+源码对应的 cubin 或宿主文件在自定义编辑器中打开时，保存 `.nvsass` 先更新该文件的
+编辑缓冲区，再保存二进制标签页才落盘。基底未在自定义编辑器中打开时，保存源码会
+在验证通过后直接写回基底文件。汇编失败时源码保留未保存状态，基底保持不变。
+
+保存二进制会在校验后及临时文件写完、提交替换前检查磁盘内容，外部修改或删除会阻止覆盖；
+提交前还会检查取消状态和编辑版本，检查失败时保留编辑内容并清理临时文件。需要处理磁盘冲突时，可重新载入或另存为。
+“另存为”会检测校验期间目标文件是否被修改、新建或删除。原文件丢失时仍能恢复
+有效的 VS Code 备份，重新保存到原位置前将完整校验指令；若原位置已被其他程序
+重新创建，则保留新文件并提示冲突。
 
 `Ctrl+S` 落盘前先查一遍：**这次改动过的每条指令都必须能被 nvdisasm 解出来**。
 解不出就弹模态框挡住保存，只有显式选「实验性保存（保留非法编码）」才落盘 ——
@@ -348,10 +365,6 @@ InsKey，靠 `data/segtable-sm90.json` 里每个 key 的 **const 格**反查：�
 但注意**解得出不等于合法**，比如 `LDC` 的 73:75 填 6，nvdisasm 会老实读回
 `LDC.INVALID6`。
 
-## 安装
-
-参见项目根目录 [README](../README.md)。后端与指令数据随扩展一起提供。
-
 ## 配置
 
 | 项 | 默认 | 说明 |
@@ -360,6 +373,7 @@ InsKey，靠 `data/segtable-sm90.json` 里每个 key 的 **const 格**反查：�
 | `cubinSass.scriptPath` | `scripts/cubin_sass.py` | 默认使用扩展自带脚本，自定义相对路径按工作区根解析（没有工作区时按扩展目录） |
 | `cubinSass.backendTimeout` | `120` | 后台任务总超时秒数，含排队，范围 1–3600 |
 | `cubinSass.backendConcurrency` | `2` | 同时运行的后台任务数，范围 1–8，最多另排队 32 个 |
+| `cubinSass.scrollSync` | `true` | 源码与预览滚动联动 |
 | `cubinSass.showBytes` | `true` | 字节列默认是否展开 |
 | `cubinSass.showCtrl` | `true` | 控制段默认是否展开 |
 
@@ -369,41 +383,33 @@ InsKey，靠 `data/segtable-sm90.json` 里每个 key 的 **const 格**反查：�
 任务自动取消；Linux 上超时或取消会终止整个 Python 进程组，包含其 CUDA 工具子进程。
 后台验证取消或超时时保留编辑内容，不会提供“实验性保存”来绕过未完成的验证。
 
-保存二进制前会复查磁盘内容，外部修改或删除会阻止覆盖；需要重新载入或另存为。
-“另存为”会检测校验期间目标文件是否被修改、新建或删除。原文件丢失时仍能恢复
-有效的 VS Code 备份，重新保存到原位置前将完整校验指令；若原位置已被其他程序
-重新创建，则保留新文件并提示冲突。
+## 故障排查
 
-## 结构
+| 现象 | 检查方式 |
+| --- | --- |
+| 找不到 Python | 在用户或远程设置中将 `cubinSass.pythonPath` 设为 Python 3.10+ 解释器的路径。 |
+| 只能看到字节与控制字段，没有 SASS | 确认扩展宿主的 `PATH` 包含 CUDA Toolkit 的 `bin` 目录，且能运行 `nvdisasm --version`；更新环境后重启扩展宿主。 |
+| Remote-SSH 下本地工具可用，插件仍报缺失 | Python 和 CUDA 工具需要安装在远程主机，并对远程扩展宿主可见。 |
+| 扩展没有启用 | 检查工作区是否处于受限模式；扩展不会在不受信任的工作区中启用。 |
+| 后台验证超时 | 按任务需要调整 `cubinSass.backendTimeout`，或运行 `Cubin: 取消后台任务` 取消当前工作后重试。 |
+| 保存提示磁盘冲突 | 保留当前编辑，重新载入基底或另存为；详细规则见[保存安全闸](#保存安全闸)。 |
 
-```
-extension.js        自定义编辑器 + 对比/patch/源码导出命令；不含任何 ISA 知识
-backend.js          后台任务队列、总超时、取消与子进程清理
-basehash.js         `.base` 判据（sha256 前 16 位）与源码头解析；不依赖 vscode，
-                    与后端 sass_source.base_hash() 是同一个定义
-nvsassfs.js         .nvsass 的内存文件系统（scheme `nvsass:`）：源码不落盘，
-                    「源码 -> 基底 cubin」的绑定写在 uri 里而不是文件名上
-syntaxes/           .nvsass 的 TextMate 语法
-media/main.js       DOM 与消息收发（只剩这些；纯逻辑都在下面两个文件里）
-media/bits.js       位运算 + 输入解析（纯函数，BigInt；node 能直接测）
-media/view.js       文案/样式/下拉选项/提交校验/编辑会话/宿主消息（纯函数）
-media/main.css      全部走 VS Code 主题变量，跟随亮/暗色
-test/bits.test.js   bits.js 的行为测试
-test/nvsassfs.test.js  内存文件系统：不落盘、uri 绑定、重载后重导
-test/view.test.js   view.js 的行为测试：INVALID 警示、thin/borrowed 提示、
-                    operand 输入、取消、非法编码提示、插入/删除失败反馈
-                        node test/bits.test.js
-                        node test/view.test.js
-```
+预览、反汇编、编辑和回环验证无需 GPU。可选的驱动加载检查需要 CUDA 驱动、兼容设备
+及 C 编译器；缺少条件时报告跳过。这类检查仅加载模块，不执行修改后的 kernel，
+通过检查也不代表程序计算正确。
 
-真正解析 cubin 的是仓库里的 `scripts/cubin_sass.py`，它复用
-`nvisa/model/codec.py` 的字段定义 —— **位定义只有那一份**，改 ISA 认识时
-不用同步改扩展。脚本单独也能用：
+## 命令行
+
+仓库中的 `scripts/cubin_sass.py` 可以脱离 VS Code 使用：
 
 ```bash
 python3 scripts/cubin_sass.py corpus/cubins/fma.sm_90.cubin
 python3 scripts/cubin_sass.py edited.cubin --diff corpus/cubins/fma.sm_90.cubin
+python3 scripts/cubin_sass.py --help
 ```
 
-`nvdisasm` 不在 PATH 时脚本不报错，只是 `have_nvdisasm:false`，页面退化成
-「字节 + 控制段解码」，仍然可用。
+命令行响应为 JSON，失败时返回非零退出码。源码导出、汇编示例见
+[支持的文件与编辑模式](#支持的文件与编辑模式)，patch 示例见[批量编辑](#批量编辑json-patch)。
+`nvdisasm` 不在 `PATH` 时，预览响应包含 `have_nvdisasm:false`，仍可查看字节与控制字段。
+
+实现结构和运行数据来源见[架构说明](architecture.md)，开发与测试见[贡献指南](../CONTRIBUTING.md)。

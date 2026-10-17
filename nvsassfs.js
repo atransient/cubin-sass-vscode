@@ -66,6 +66,7 @@ class NvsassFS {
    */
   constructor(rehydrate = null, save = null) {
     this.entries = new Map();          // uri.toString() -> {content, ctime, mtime}
+    this._pending = new Map();         // uri.toString() -> current recovery job
     this.rehydrate = rehydrate;
     this.save = save;
     this._emitter = new vscode.EventEmitter();
@@ -80,6 +81,7 @@ class NvsassFS {
     const key = uri.toString();
     const old = this.entries.get(key);
     const now = old ? Math.max(Date.now(), old.mtime + 1) : Date.now();
+    this._pending.delete(key);
     this.entries.set(key, {
       content: Buffer.from(text, 'utf8'),
       ctime: old ? old.ctime : now,
@@ -99,6 +101,7 @@ class NvsassFS {
   replace(uri, text) {
     const e = this.entries.get(uri.toString());
     if (!e) return;
+    this._pending.delete(uri.toString());
     e.content = Buffer.from(text, 'utf8');
     e.mtime = Math.max(Date.now(), e.mtime + 1);
     this._emitter.fire([{ type: vscode.FileChangeType.Changed, uri }]);
@@ -154,6 +157,7 @@ class NvsassFS {
     const key = uri.toString();
     const old = this.entries.get(key);
     const now = old ? Math.max(Date.now(), old.mtime + 1) : Date.now();
+    this._pending.delete(key);
     this.entries.set(key, {
       content: saved === null || saved === undefined ? Buffer.from(content) : Buffer.from(saved),
       ctime: old ? old.ctime : now,
@@ -162,10 +166,18 @@ class NvsassFS {
     this._emitter.fire([{ type: vscode.FileChangeType.Changed, uri }]);
   }
 
+  /** Drop a closed document without reporting a file deletion to VS Code. */
+  forget(uri) {
+    const key = uri.toString();
+    this.entries.delete(key);
+    this._pending.delete(key);
+  }
+
   delete(uri) {
-    if (!this.entries.delete(uri.toString())) {
+    if (!this.entries.has(uri.toString())) {
       throw vscode.FileSystemError.FileNotFound(uri);
     }
+    this.forget(uri);
     this._emitter.fire([{ type: vscode.FileChangeType.Deleted, uri }]);
   }
 
@@ -177,18 +189,34 @@ class NvsassFS {
 
   async _get(uri) {
     const key = uri.toString();
-    let e = this.entries.get(key);
+    const e = this.entries.get(key);
     if (e) return e;
+    const pending = this._pending.get(key);
+    if (pending) return pending.promise;
     const b = bindingOf(uri);
     if (!b || !this.rehydrate) throw vscode.FileSystemError.FileNotFound(uri);
-    const text = await this.rehydrate(vscode.Uri.file(b.base), b.section, b.image);
-    if (text === null || text === undefined) {
-      throw vscode.FileSystemError.FileNotFound(uri);
-    }
-    const now = Date.now();
-    e = { content: Buffer.from(text, 'utf8'), ctime: now, mtime: now };
-    this.entries.set(key, e);
-    return e;
+    const job = {};
+    this._pending.set(key, job);
+    // Defer the callback so concurrent stat/readFile calls see the same job,
+    // including when rehydrate throws synchronously.
+    job.promise = Promise.resolve().then(async () => {
+      try {
+        const text = await this.rehydrate(vscode.Uri.file(b.base), b.section, b.image);
+        const current = this.entries.get(key);
+        if (current) return current;
+        // Closing, deleting or reopening the document invalidates this job.
+        if (this._pending.get(key) !== job || text === null || text === undefined) {
+          throw vscode.FileSystemError.FileNotFound(uri);
+        }
+        const now = Date.now();
+        const entry = { content: Buffer.from(text, 'utf8'), ctime: now, mtime: now };
+        this.entries.set(key, entry);
+        return entry;
+      } finally {
+        if (this._pending.get(key) === job) this._pending.delete(key);
+      }
+    });
+    return job.promise;
   }
 }
 
