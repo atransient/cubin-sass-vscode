@@ -1,0 +1,239 @@
+{
+  "name": "cubin-sass",
+  "displayName": "Cubin SASS Preview",
+  "description": "Preview, edit, compare and assemble NVIDIA sm_90 cubin SASS in VS Code.",
+  "version": "0.1.0",
+  "publisher": "atransient",
+  "author": {
+    "name": "atransient"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atransient/cubin-sass-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/atransient/cubin-sass-vscode/issues"
+  },
+  "homepage": "https://github.com/atransient/cubin-sass-vscode#readme",
+  "engines": {
+    "vscode": "^1.75.0",
+    "node": ">=20"
+  },
+  "categories": [
+    "Visualization",
+    "Programming Languages"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "cubinSass.preview",
+        "displayName": "SASS preview",
+        "selector": [
+          {
+            "filenamePattern": "*.cubin"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "cubinSass.hostPreview",
+        "displayName": "SASS preview (CUDA Host ELF)",
+        "selector": [
+          {
+            "filenamePattern": "*"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "commands": [
+      {
+        "command": "cubinSass.diff",
+        "title": "Cubin: 与另一个 cubin 对比",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "cubinSass.clearDiff",
+        "title": "Cubin: 取消对比"
+      },
+      {
+        "command": "cubinSass.reopenWith",
+        "title": "Cubin: 用 SASS preview 打开"
+      },
+      {
+        "command": "cubinSass.openHostExecutable",
+        "title": "Cubin: 打开可执行文件中的 sm_90 SASS"
+      },
+      {
+        "command": "cubinSass.exportPatch",
+        "title": "Cubin: 导出改动为 JSON patch"
+      },
+      {
+        "command": "cubinSass.applyPatch",
+        "title": "Cubin: 应用一份 JSON patch"
+      },
+      {
+        "command": "cubinSass.openSource",
+        "title": "Cubin: 以 SASS 源码打开"
+      },
+      {
+        "command": "cubinSass.assembleSource",
+        "title": "Cubin: 把 SASS 源码汇编回 cubin"
+      },
+      {
+        "command": "cubinSass.cancelTasks",
+        "title": "Cubin: 取消后台任务"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "cubinSass.diff",
+          "when": "activeCustomEditorId == cubinSass.preview || activeCustomEditorId == cubinSass.hostPreview",
+          "group": "navigation"
+        },
+        {
+          "command": "cubinSass.openSource",
+          "when": "activeCustomEditorId == cubinSass.preview || activeCustomEditorId == cubinSass.hostPreview",
+          "group": "navigation"
+        },
+        {
+          "command": "cubinSass.assembleSource",
+          "when": "editorLangId == nvsass",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "cubinSass.openHostExecutable",
+          "when": "resourceScheme == file",
+          "group": "open@20"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "cubinSass.openHostExecutable"
+        },
+        {
+          "command": "cubinSass.diff",
+          "when": "activeCustomEditorId == cubinSass.preview || activeCustomEditorId == cubinSass.hostPreview"
+        },
+        {
+          "command": "cubinSass.clearDiff",
+          "when": "activeCustomEditorId == cubinSass.preview || activeCustomEditorId == cubinSass.hostPreview"
+        },
+        {
+          "command": "cubinSass.exportPatch",
+          "when": "activeCustomEditorId == cubinSass.preview || activeCustomEditorId == cubinSass.hostPreview"
+        },
+        {
+          "command": "cubinSass.applyPatch",
+          "when": "activeCustomEditorId == cubinSass.preview || activeCustomEditorId == cubinSass.hostPreview"
+        },
+        {
+          "command": "cubinSass.openSource"
+        },
+        {
+          "command": "cubinSass.assembleSource",
+          "when": "editorLangId == nvsass"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "cubin SASS preview",
+      "properties": {
+        "cubinSass.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "解析 cubin 用的 python 解释器。只读取用户/远程设置，工作区设置不能覆盖（防止仓库指定要执行的程序）。",
+          "scope": "machine"
+        },
+        "cubinSass.scriptPath": {
+          "type": "string",
+          "default": "scripts/cubin_sass.py",
+          "description": "Python 后端路径。默认使用扩展自带脚本；自定义相对路径按工作区根目录解析，没有工作区时按扩展目录解析。只读取用户/远程设置，工作区设置不能覆盖。",
+          "scope": "machine"
+        },
+        "cubinSass.backendTimeout": {
+          "type": "number",
+          "default": 120,
+          "minimum": 1,
+          "maximum": 3600,
+          "description": "单个后台任务的总超时秒数（含排队）。超时会终止 Python 及其子进程。"
+        },
+        "cubinSass.backendConcurrency": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 8,
+          "description": "最多同时运行的后台任务数。过期预览自动取消，最多排队 32 个任务。"
+        },
+        "cubinSass.scrollSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "`.nvsass` 源码栏与 SASS preview 的滚动联动（像 markdown 的编辑器/预览那样）。"
+        },
+        "cubinSass.showBytes": {
+          "type": "boolean",
+          "default": true,
+          "description": "默认是否展开原始字节列。页面上也能随时切。"
+        },
+        "cubinSass.showCtrl": {
+          "type": "boolean",
+          "default": true,
+          "description": "默认是否展开控制段解码。页面上也能随时切。"
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "nvsass",
+        "aliases": [
+          "NVIDIA SASS 源码",
+          "nvsass"
+        ],
+        "extensions": [
+          ".nvsass"
+        ],
+        "configuration": "./nvsass-language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "nvsass",
+        "scopeName": "source.nvsass",
+        "path": "./syntaxes/nvsass.tmLanguage.json"
+      }
+    ]
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "扩展会运行 Python 后端和 CUDA 工具处理二进制文件，只在受信任的工作区中启用。"
+    },
+    "virtualWorkspaces": false
+  },
+  "keywords": [
+    "cuda",
+    "cubin",
+    "sass",
+    "nvidia",
+    "sm90"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:python": "python3 -m pytest",
+    "package": "vsce package --no-dependencies --out cubin-sass.vsix",
+    "package:list": "vsce ls --no-dependencies"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "3.3.2",
+    "jsdom": "^26.0.0"
+  }
+}

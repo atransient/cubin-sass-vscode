@@ -1,0 +1,165 @@
+{
+  "origin": "nv_isa",
+  "description": "Standalone runtime snapshots. Original scan pipeline is outside this repository.",
+  "files": [
+    {
+      "source": "nvisa/analyze/fields.py",
+      "path": "nvisa/analyze/fields.py",
+      "source_sha256": "b2d8666698255c4e8fbd1b5a88a1c3472ea7dd919cd674c6a02cc5f25bb3aca7"
+    },
+    {
+      "source": "nvisa/collect/harvest.py",
+      "path": "nvisa/collect/harvest.py",
+      "source_sha256": "f8b0470e4d329e8dac6b850615d4259828f1ad52ea6b9966c48f529de5590600"
+    },
+    {
+      "source": "nvisa/model/__init__.py",
+      "path": "nvisa/model/__init__.py",
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "nvisa/model/arch.py",
+      "path": "nvisa/model/arch.py",
+      "source_sha256": "a8fda71fe1c6b62fc7b92eb8a7384ad4b35b18e9cca0b1f8a41071aca77b6305"
+    },
+    {
+      "source": "nvisa/model/asm.py",
+      "path": "nvisa/model/asm.py",
+      "source_sha256": "5e5211d5320bc44af8d180d5516ad99fc87b092bd361d9c1d47fcfbadd58a723"
+    },
+    {
+      "source": "nvisa/model/asm_spec.py",
+      "path": "nvisa/model/asm_spec.py",
+      "source_sha256": "be7d7061400b92c84a19d54c8b4894c65ae96c4d6a9fea2fd19513bc6ada894b"
+    },
+    {
+      "source": "nvisa/model/codec.py",
+      "path": "nvisa/model/codec.py",
+      "source_sha256": "351e6eba1cd5d00796f7addb9528f2d1f45682b07b782e86d3c19e4df716a63c"
+    },
+    {
+      "source": "nvisa/model/debug_policy.py",
+      "path": "nvisa/model/debug_policy.py",
+      "source_sha256": "24d00449023ceb9441e141e92ddbdb2a55e1c023dc072335af55f1ee0f8de9b1"
+    },
+    {
+      "source": "nvisa/model/elf_inspect.py",
+      "path": "nvisa/model/elf_inspect.py",
+      "source_sha256": "b367cd4ad19fc349dc89f72852874e43bd1472c6ee92be6933c8d5f356425637"
+    },
+    {
+      "source": "nvisa/model/elf_rewrite.py",
+      "path": "nvisa/model/elf_rewrite.py",
+      "source_sha256": "2f230cb8ff27c35899b603e3977d079493a0effbfa1051edcf3412a0498abdac"
+    },
+    {
+      "source": "nvisa/model/encode.py",
+      "path": "nvisa/model/encode.py",
+      "source_sha256": "50bfef6497a88d3e73647036e6f71d09141c1a0c5f2ba263637d82bbbce97209"
+    },
+    {
+      "source": "nvisa/model/fatbin.py",
+      "path": "nvisa/model/fatbin.py",
+      "source_sha256": "ca098080aef8189e8b5886f9cbdb045fb8b663d8b23c133be331a66ba8c0653f"
+    },
+    {
+      "source": "nvisa/model/form_grammar.py",
+      "path": "nvisa/model/form_grammar.py",
+      "source_sha256": "5e291639d120c69038deb02dd8b08d7caeca5d49ea9fb1b9d5a296a80458ab62"
+    },
+    {
+      "source": "nvisa/model/keys.py",
+      "path": "nvisa/model/keys.py",
+      "source_sha256": "b173408bb6d9b7cc3bffbe082f455110043bc40b97fcb5a1c435b57bdbc57c14"
+    },
+    {
+      "source": "nvisa/model/reflow.py",
+      "path": "nvisa/model/reflow.py",
+      "source_sha256": "3f8b843364978f3700434eb73aa65b519f84036f7ec93507680df53d5f557e50"
+    },
+    {
+      "source": "nvisa/model/sass_asm.py",
+      "path": "nvisa/model/sass_asm.py",
+      "source_sha256": "d08ec0377763a4895bb4e33a1e28c76fa685f01a99d3cee39f3a83fdd8abf529"
+    },
+    {
+      "source": "nvisa/model/sass_parser.py",
+      "path": "nvisa/model/sass_parser.py",
+      "source_sha256": "bac9f86eb34eab9934ff1b65521494ac754a9d0bda836ddaab57bc58d4b2fd51"
+    },
+    {
+      "source": "nvisa/model/sass_save.py",
+      "path": "nvisa/model/sass_save.py",
+      "source_sha256": "aac862ca7c3367fccc193135e4b3fcdfcfbfd2316ece4ff778026038806225f3"
+    },
+    {
+      "source": "nvisa/model/sass_source.py",
+      "path": "nvisa/model/sass_source.py",
+      "source_sha256": "6aed422b8def4798993ab2046a1a695fa3fa45d52e59a3fce13c75098a6a0616"
+    },
+    {
+      "source": "nvisa/model/translate.py",
+      "path": "nvisa/model/translate.py",
+      "source_sha256": "26b57e854000d79cec912a0c6929be2767124c4c2d8d63f1fb9812d18b6aee6d"
+    },
+    {
+      "source": "nvisa/oracle/__init__.py",
+      "path": "nvisa/oracle/__init__.py",
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "source": "nvisa/oracle/base.py",
+      "path": "nvisa/oracle/base.py",
+      "source_sha256": "e56badee9c5e6cdd27743a6ce19ceba6697b17fe28a03a09b589c06f4e0c5d7f"
+    },
+    {
+      "source": "nvisa/oracle/cubin.py",
+      "path": "nvisa/oracle/cubin.py",
+      "source_sha256": "f5ada1d03d453cb88fc286e505c4e773357808b2073b30508ead95c10f236299"
+    },
+    {
+      "source": "nvisa/oracle/discache.py",
+      "path": "nvisa/oracle/discache.py",
+      "source_sha256": "894624173bb572bb59f13da7140deff174feca9d9dd95dad65502a044de3d747"
+    },
+    {
+      "source": "nvisa/oracle/execute.py",
+      "path": "nvisa/oracle/execute.py",
+      "source_sha256": "f32071ab1351c76f6163fcea5c7170661770dc66185bbe5ac2669113079f03a3"
+    },
+    {
+      "source": "nvisa/oracle/nvdisasm.py",
+      "path": "nvisa/oracle/nvdisasm.py",
+      "source_sha256": "0f43ad1eafff42c93da2358ae30c167251f690a9e01d7198ce3b02a4d3732fb4"
+    },
+    {
+      "source": "scripts/cubin_sass.py",
+      "path": "scripts/cubin_sass.py",
+      "source_sha256": "14226fc7f0178e6c40941d2e607f85a82866f5f5f923a671a9c8a3e44475579c"
+    },
+    {
+      "source": "out/fieldscan-sm90.json",
+      "path": "data/fieldscan-sm90.json",
+      "source_sha256": "6d146b0d672227bbe67abb1ecb13d1a758cb6de8e1a4fc2398fbfe2f8c89237f",
+      "sha256": "6d146b0d672227bbe67abb1ecb13d1a758cb6de8e1a4fc2398fbfe2f8c89237f"
+    },
+    {
+      "source": "out/form-grammar-sm90.json",
+      "path": "data/form-grammar-sm90.json",
+      "source_sha256": "1f7865fd9583dfbc4175b0f05aa0c03a170bf35e79d202b09d4fea1af3152c48",
+      "sha256": "0f175cda9fc0c6a8d351fe2cfcc499acae008e0dbda615e4ed468fc24feb063a"
+    },
+    {
+      "source": "out/modes-sm90.json",
+      "path": "data/modes-sm90.json",
+      "source_sha256": "a84c14b31b879e93e8148ef663655dd0f29e3b2b2e2a85b56fdd0fb2c677405b",
+      "sha256": "a84c14b31b879e93e8148ef663655dd0f29e3b2b2e2a85b56fdd0fb2c677405b"
+    },
+    {
+      "source": "out/segtable-sm90.json",
+      "path": "data/segtable-sm90.json",
+      "source_sha256": "9608a25fe29de9e7979e250b72a8e226360240a92c6128e3692dbcff985cb239",
+      "sha256": "9608a25fe29de9e7979e250b72a8e226360240a92c6128e3692dbcff985cb239"
+    }
+  ]
+}

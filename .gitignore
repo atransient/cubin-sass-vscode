@@ -1,0 +1,11 @@
+node_modules/
+*.vsix
+cuda-test-results.xml
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.cache/
+build/
+dist/
+*.egg-info/

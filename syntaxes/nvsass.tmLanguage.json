@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "nvsass",
+  "scopeName": "source.nvsass",
+  "patterns": [
+    { "match": "//.*$", "name": "comment.line.double-slash.nvsass" },
+    { "match": "^\\s*\\[B[0-5-]{6}:R[0-5-]:W[0-5-]:[Y-]:S\\d{1,2}\\]",
+      "name": "keyword.control.ctrl.nvsass" },
+    { "match": "^\\s*\\.(arch|section|base|regcount)\\b",
+      "name": "keyword.other.directive.nvsass" },
+    { "match": "^\\s*\\.L_[\\w.$]*\\s*:", "name": "entity.name.label.nvsass" },
+    { "match": "@!?U?P[0-7T]\\b", "name": "keyword.control.predicate.nvsass" },
+    { "match": "\\b(U?R(Z|\\d+)|U?P(T|[0-7])|SB\\d+|B\\d+)\\b",
+      "name": "variable.language.register.nvsass" },
+    { "match": "\\b(0[xX][0-9a-fA-F]+|\\d+(\\.\\d+)?([eE][-+]?\\d+)?)\\b",
+      "name": "constant.numeric.nvsass" },
+    { "match": "\\bc\\[|\\bcx\\[|\\bdesc\\[", "name": "support.function.memory.nvsass" },
+    { "match": "\\.L_[\\w.$]+", "name": "entity.name.label.nvsass" },
+    { "match": "\\.[A-Za-z]\\w*", "name": "entity.other.attribute-name.modifier.nvsass" },
+    { "match": "^\\s*(?:\\[[^\\]]*\\]\\s*)?(?:@!?U?P[0-7T]\\s+)?([A-Z][A-Z0-9_]*)",
+      "captures": { "1": { "name": "keyword.operator.opcode.nvsass" } } }
+  ]
+}

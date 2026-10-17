@@ -1,0 +1,341 @@
+/* 全部走 VS Code 的主题变量，跟着编辑器的亮/暗色走。 */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  font-size: var(--vscode-editor-font-size, 13px);
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  border-bottom: 1px solid var(--vscode-panel-border, transparent);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+}
+header .grow { flex: 1; }
+header label { display: flex; align-items: center; gap: 4px; white-space: nowrap; cursor: pointer; }
+
+#title { font-weight: 600; }
+#title .diff-tag {
+  margin-left: 8px;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+}
+
+#filter {
+  width: 260px;
+  padding: 3px 6px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  font-family: inherit;
+}
+
+#banner {
+  margin: 10px 12px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  border-radius: 3px;
+  color: var(--vscode-inputValidation-errorForeground, inherit);
+  background: var(--vscode-inputValidation-errorBackground);
+  border: 1px solid var(--vscode-inputValidation-errorBorder);
+}
+#banner.info {
+  color: inherit;
+  background: var(--vscode-inputValidation-infoBackground);
+  border-color: var(--vscode-inputValidation-infoBorder);
+}
+
+main { padding: 8px 0 40px; }
+
+.kernel {
+  margin: 6px 8px;
+  border: 1px solid var(--vscode-panel-border, transparent);
+  border-radius: 3px;
+}
+.kernel-summary {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  padding: 6px 9px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+}
+.kernel-summary::-webkit-details-marker { display: none; }
+.kernel-summary::before {
+  content: '▶';
+  flex: none;
+  font-size: 9px;
+  transition: transform 80ms ease;
+}
+.kernel[open] > .kernel-summary::before { transform: rotate(90deg); }
+.kernel-summary:hover { background: var(--vscode-list-hoverBackground); }
+.kernel-summary:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.kernel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--vscode-editor-foreground);
+}
+.kernel-summary .meta {
+  flex: none;
+  margin-left: auto;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.kernel table { border-top: 1px solid var(--vscode-panel-border, transparent); }
+
+table { width: 100%; border-collapse: collapse; }
+
+tr.insn { border-left: 3px solid transparent; }
+tr.insn:hover { background: var(--vscode-list-hoverBackground); }
+tr.insn.diff {
+  border-left-color: var(--vscode-gitDecoration-modifiedResourceForeground, #e2c08d);
+  background: var(--vscode-diffEditor-insertedTextBackground, rgba(155, 185, 85, 0.12));
+}
+
+td { padding: 1px 8px; vertical-align: top; white-space: pre; }
+
+td.addr {
+  width: 1%;
+  color: var(--vscode-editorLineNumber-foreground);
+  cursor: pointer;
+}
+td.addr:hover { color: var(--vscode-editorLineNumber-activeForeground); text-decoration: underline; }
+td.off { width: 1%; color: var(--vscode-descriptionForeground); }
+td.sass { width: 100%; cursor: text; }
+td.sass:hover {
+  background: var(--vscode-list-hoverBackground);
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+/* nvdisasm 出不来时（没装 / 不认这个 arch）至少还有字节可看 */
+td.sass.empty { color: var(--vscode-descriptionForeground); font-style: italic; }
+
+.mn { color: var(--vscode-symbolIcon-functionForeground, #dcdcaa); }
+.reg { color: var(--vscode-symbolIcon-variableForeground, #9cdcfe); }
+.imm { color: var(--vscode-debugTokenExpression-number, #b5cea8); }
+.pred { color: var(--vscode-symbolIcon-keywordForeground, #c586c0); }
+
+tr.detail td { padding: 0 8px 4px 8px; }
+tr.detail .bytes {
+  color: var(--vscode-debugTokenExpression-string, #ce9178);
+  letter-spacing: 0.5px;
+}
+tr.detail .ctrl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 2px;
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+}
+.chip {
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  cursor: help;
+}
+/* 默认值（未使用的 barrier、不等待）压暗，让真正设了的字段跳出来 */
+.chip.idle { background: transparent; color: var(--vscode-descriptionForeground); }
+
+.empty-note {
+  margin: 20px 12px;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+}
+
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 12px 28px;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+}
+.load-more button {
+  padding: 3px 12px;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.load-more button:hover { background: var(--vscode-button-hoverBackground); }
+
+/* ---- 编辑 ---- */
+
+#title .dirty {
+  margin-left: 6px;
+  color: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+/* 上次落盘绕过了保存安全闸 —— 文件里有 nvdisasm 解不出来的编码 */
+#title .experimental {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--vscode-inputValidation-warningForeground, #fff);
+  background: var(--vscode-inputValidation-warningBackground, #7a5c00);
+  border: 1px solid var(--vscode-inputValidation-warningBorder, #b89500);
+}
+
+.chip.edit, .hex.edit { cursor: pointer; }
+.chip.edit:hover {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+.hex.edit:hover {
+  background: var(--vscode-list-hoverBackground);
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+/* 整行插入/删除。默认藏起来，鼠标停在这一行才露出来 —— 这两个动作会挪动
+   后面所有指令，不该像改一格那样随手点到。 */
+.reflow { margin-left: 6px; opacity: 0; }
+tr.insn:hover .reflow { opacity: 1; }
+.reflow b {
+  padding: 0 3px;
+  cursor: pointer;
+  border: 1px solid var(--vscode-panel-border, transparent);
+  border-radius: 2px;
+}
+.reflow b:hover { background: var(--vscode-list-hoverBackground);
+                  border-color: var(--vscode-focusBorder); }
+
+input.inline {
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  font-size: inherit;
+  padding: 0 4px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-focusBorder);
+  border-radius: 2px;
+}
+td.sass input.inline { width: 100%; }
+
+#hint {
+  position: fixed;
+  right: 12px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-panel-border, transparent);
+  pointer-events: none;
+}
+
+/* ---- segtable 格子 ---- */
+
+.inskey {
+  margin-left: 10px;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-panel-border, currentColor);
+  border-radius: 2px;
+}
+
+.cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 4px;
+  margin-top: 3px;
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+}
+.cells.none { color: var(--vscode-descriptionForeground); font-style: italic; }
+
+.cell {
+  padding: 0 4px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  cursor: help;
+  white-space: nowrap;
+}
+.cell b { font-weight: 400; opacity: 0.55; margin-right: 3px; }
+.cell.dim { opacity: 0.35; }
+
+/* 按 segtable 的 kind 上色，和 legend 一致 */
+.k-const    { background: var(--vscode-textBlockQuote-background); }
+.k-operand  { background: var(--vscode-textPreformat-background, rgba(127,127,127,.15));
+              color: var(--vscode-symbolIcon-variableForeground, inherit); }
+.k-enum,
+.k-modifier { border-color: var(--vscode-focusBorder);
+              color: var(--vscode-symbolIcon-enumeratorForeground, inherit); }
+.k-ctrl     { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
+.k-dc_safe,
+.k-dontcare { color: var(--vscode-descriptionForeground); }
+/* opcode 位：改它是换成另一条指令，不是给这条加后缀 —— 不给下拉框，画法也不同 */
+.k-opcode_sel { border-color: var(--vscode-editorWarning-foreground);
+                border-style: dashed;
+                color: var(--vscode-editorWarning-foreground); }
+/* 这个取值 nvdisasm 读不出来（非法编码）—— 与「默认、不加后缀」是两回事 */
+.cell.bad { background: var(--vscode-inputValidation-errorBackground,
+                              rgba(255, 0, 0, .12));
+            border-color: var(--vscode-inputValidation-errorBorder,
+                              var(--vscode-editorError-foreground)); }
+.cell.bad.dim { opacity: 1; }
+/* 解得出 ≠ 合法。token 本身就是 INVALID* 时 nvdisasm 照样读得出、照样
+   打印，但不是一条有意义的指令——跟 .bad（读不出来）性质不同，只是警告，
+   不是错误，颜色也弱一档。 */
+.cell.dubious { background: var(--vscode-inputValidation-warningBackground,
+                                  rgba(204, 167, 0, .14));
+                border-color: var(--vscode-inputValidation-warningBorder,
+                                  var(--vscode-editorWarning-foreground)); }
+.cell.dubious.dim { opacity: 1; }
+/* 多 mode 子表未解出选择条件，名字未必适用（R2） */
+.cell.unresolved b::after { content: '?'; opacity: 0.8; margin-left: 1px; }
+
+.cell.edit { cursor: pointer; }
+.cell.edit:hover { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+select.inline { max-width: 320px; }
+
+/* 编辑弱证据格子时摆在控件旁边的提示。查看时这句话在 tooltip 里，编辑时
+   控件把格子替换掉了 tooltip 也跟着没了——而这正是最需要看到它的时候。
+   不阻塞操作，只是提醒这一格的位置/宽度是推出来的。 */
+.trust-hint {
+  margin-left: 6px;
+  padding: 0 4px;
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-inputValidation-warningForeground, inherit);
+  background: var(--vscode-inputValidation-warningBackground,
+                   rgba(204, 167, 0, .14));
+  border: 1px solid var(--vscode-inputValidation-warningBorder,
+                       var(--vscode-editorWarning-foreground));
+  border-radius: 2px;
+}
+
+/* 格子可信度：证据不足的格子要一眼看得出来，不能和实测的一视同仁。
+   `thin` = 样本不足推出来的（生产库实测过：这类 const 格有的其实是操作数槽），
+   `borrowed` = 从别的 key 借来的。都用虚线下划线，不夺视觉焦点但翻得到。 */
+.cell.weak-thin { border-bottom: 1px dashed var(--vscode-editorWarning-foreground, #cca700); }
+.cell.weak-borrowed { border-bottom: 1px dotted var(--vscode-descriptionForeground); }
+.cell.weak-thin b::before { content: '~'; opacity: 0.7; }

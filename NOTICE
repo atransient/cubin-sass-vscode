@@ -1,0 +1,13 @@
+Cubin SASS Preview was extracted from the nv_isa project.
+The extension's existing package manifest declared the MIT license; this
+standalone distribution retains that license.
+
+The bundled sm_90 tables are research data snapshots from nv_isa, not an
+official NVIDIA ISA specification. Form-grammar provenance records the name
+and SHA-256 of DefaultInsAsmRepos.sm_90.txt; that source repository file and
+CuAssembler implementation are not included or required at runtime.
+
+NVIDIA CUDA Toolkit tools and driver libraries are not distributed here.
+They remain subject to their respective licenses and must be installed
+separately. NVIDIA and CUDA are trademarks of NVIDIA Corporation; this is
+an independent project and is not affiliated with or endorsed by NVIDIA.
